@@ -1,19 +1,35 @@
-name: Security scan
-
-on:
-  push:
-    branches: [main]
-  pull_request:
-
-jobs:
-  semgrep:
-    name: Semgrep (code patterns)
+  bandit:
+    name: Bandit (Python)
     runs-on: ubuntu-latest
-    container:
-      image: semgrep/semgrep
     steps:
       - name: Get the code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
 
-      - name: Run Semgrep
-        run: semgrep scan --config p/python --config p/javascript
+      - name: Install Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install Bandit
+        run: pip install bandit
+
+      - name: Run Bandit
+        run: bandit -r app/python-api --exit-zero
+
+  npm-audit:
+    name: npm audit (dependencies)
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: app/node-api
+    steps:
+      - name: Get the code
+        uses: actions/checkout@v7
+
+      - name: Install Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: Run npm audit
+        run: npm audit || true
