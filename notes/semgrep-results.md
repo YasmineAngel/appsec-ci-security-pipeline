@@ -49,3 +49,31 @@ Bandit found 5 issues: 2 High, 1 Medium, 2 Low.
 | 6. Old lodash 4.17.15 | — | — | To check |
 
 `—` = not this tool's job (Bandit only reads Python; npm audit only checks libraries).
+
+# npm audit results
+
+Run: "updated yaml" (commit `5652b26`), `npm audit || true`, Node 24.21.0, npm 11.19.0.
+Result: 1 high severity vulnerability, in lodash.
+
+| Package | Installed | Affected range | Severity | Advisories | Safe version |
+| --- | --- | --- | --- | --- | --- |
+| lodash | 4.17.15 | <= 4.17.23 | High | 6 (command injection, code injection, prototype pollution x3, ReDoS) | 4.18.1 |
+
+## Lessons
+
+- npm audit doesn't read our code at all. It compares library versions against a database of known vulnerabilities (GHSA / CVE IDs).
+- A version that was considered safe (4.17.21) is now vulnerable: new advisories keep being published. Dependency scanning must run on every push, not once.
+- The fix is outside the pinned range in package.json, so it's a deliberate upgrade (`npm install lodash@4.18.1`), not an automatic one.
+
+## Final scoreboard (Step 4)
+
+| Planted bug | Semgrep | Bandit | npm audit |
+| --- | --- | --- | --- |
+| 1. Hardcoded secret | ❌ Missed | ✅ Low | — |
+| 2. SQL injection | ✅ ERROR | ✅ Medium | — |
+| 3. Command injection | ✅ ERROR | ✅ High | — |
+| 4. `debug=True` | ✅ WARNING | ✅ High | — |
+| 5. `eval()` in server.js | ❌ Missed | — (Python only) | — |
+| 6. Old lodash 4.17.15 | — | — | ✅ High |
+
+`—` = not this tool's job. Only `eval()` was missed by every tool.
