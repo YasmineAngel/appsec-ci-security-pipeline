@@ -1,3 +1,23 @@
+name: Security scan
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  semgrep:
+    name: Semgrep (code patterns)
+    runs-on: ubuntu-latest
+    container:
+      image: semgrep/semgrep
+    steps:
+      - name: Get the code
+        uses: actions/checkout@v7
+
+      - name: Run Semgrep
+        run: semgrep scan --config p/python --config p/javascript
+
   bandit:
     name: Bandit (Python)
     runs-on: ubuntu-latest
