@@ -1,0 +1,10 @@
+{
+  "name": "node-api",
+  "version": "1.0.0",
+  "description": "DELIBERATELY VULNERABLE practice app - do not deploy",
+  "private": true,
+  "main": "server.js",
+  "dependencies": {
+    "lodash": "4.17.15"
+  }
+}
