@@ -183,3 +183,30 @@ Result: **merge blocked** (Merge button greyed out, all 3 checks marked Required
 Story: **red → fixed → green → attack blocked**.
 
 Screenshots: `bad-pr-blocked.png`, `actions-history.png`.
+
+# Step 6 – Findings summary report
+
+A 4th job, **Findings summary**, collects the results of the 3 robots and writes one Markdown table:
+on the run page (`$GITHUB_STEP_SUMMARY`) and as a comment on each Pull Request (`gh pr comment`).
+
+## How it works
+
+1. Each robot saves its findings as JSON (`--json-output`, `-f json`, `npm audit --json`).
+2. Each JSON file is uploaded as an **artifact** (`upload-artifact@v7`) before the gate step, so it's saved even when the gate fails.
+3. The summary job waits for all 3 robots (`needs:`) and runs even if they failed (`if: always()`).
+4. It downloads the artifacts (`download-artifact@v8`) and runs `scripts/summarize.py`.
+5. The script uses the same blocking rules as the gate, so the table and the red ❌ always agree.
+
+Only the summary job gets `pull-requests: write` permission (least privilege). It isn't a required check: it reports, it doesn't decide.
+
+## Result on the clean code (PR "Add findings summary report")
+
+**3 findings, 0 blocking the merge.**
+
+| Tool | Severity | Blocks merge? | Location | Finding | Triage |
+| --- | --- | --- | --- | --- | --- |
+| Bandit | LOW | No | app.py:5 | B404 subprocess module | Reminder only |
+| Bandit | LOW | No | app.py:32 | B607 partial executable path | Low risk: attacker would need control of the server |
+| Bandit | LOW | No | app.py:32 | B603 subprocess call, check for untrusted input | Handled by IP address validation |
+
+Screenshots: `pr-comment.png`, `step6-run-summary.png`.
