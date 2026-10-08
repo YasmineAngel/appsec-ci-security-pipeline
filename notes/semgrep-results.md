@@ -144,3 +144,42 @@ Branch `fix-vulnerabilities` → Pull Request #1 → merged into `main`.
 Bandit still reports 3 Low-severity findings, for example B603 ("subprocess call: check for untrusted input").
 Reviewed and accepted: no `shell=True` is used, and `ipaddress.ip_address()` rejects any input that isn't an IP address.
 Note: Bandit shows "High: 3" under **confidence** (how sure it is), not **severity** (how dangerous). The gate only looks at severity.
+
+# Step 7b – Branch protection
+
+Ruleset `Protect main` (Active) on the default branch.
+Required status checks: `Semgrep (code patterns)`, `Bandit (Python)`, `npm audit (dependencies)`.
+Effect: nothing can be merged into `main` unless all 3 checks pass. Direct pushes to `main` are refused, so every change goes through a Pull Request.
+
+# Step 7c – Blocked Pull Request
+
+PR #2 "Add domain lookup feature" (branch `bad-change`): a rushed teammate adds a `/lookup` route that passes user input to a shell command with `shell=True`.
+
+| Check | Result | Why |
+| --- | --- | --- |
+| Semgrep | ❌ Failed | `subprocess-shell-true` (ERROR) |
+| Bandit | ❌ Failed | B602 `shell=True` (High) |
+| npm audit | ✅ Passed | No dependency changes |
+
+Result: **merge blocked** (Merge button greyed out, all 3 checks marked Required). The PR was closed without merging and stays visible as evidence.
+
+## Lessons
+
+- An innocent-looking commit message ("Add domain lookup feature") doesn't fool the robots: they read the code, not the description.
+- Each tool checks its own area: the code scanners failed, the dependency scanner passed.
+- The repo admin can still bypass the rules in an emergency. Who holds that "emergency key" is a real security decision.
+
+# Run history (the whole story)
+
+| Run | Branch | Result | What happened |
+| --- | --- | --- | --- |
+| #7 Fail the build on high-severity findings | main | ❌ | The gate turns on and catches the planted bugs |
+| #8 updates | main | ❌ | Notes pushed while the vulnerable code was still in `main`, so the gate stayed red |
+| #9 Fix planted vulnerabilities | fix-vulnerabilities | ✅ | The fix PR passes all checks |
+| #10 Merge pull request #1 | main | ✅ | `main` is clean |
+| #11 Add Step 7a notes and screenshots | main | ✅ | Still clean |
+| #12 Add domain lookup feature | bad-change | ❌ | The sneaky PR is caught and blocked |
+
+Story: **red → fixed → green → attack blocked**.
+
+Screenshots: `bad-pr-blocked.png`, `actions-history.png`.
