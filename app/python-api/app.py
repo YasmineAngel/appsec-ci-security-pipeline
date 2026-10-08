@@ -32,6 +32,11 @@ def ping():
     output = subprocess.check_output(["ping", "-c", "1", str(ip)])
     return output
 
+@app.route("/lookup")
+def lookup():
+    # Rushed copy-paste: command injection again
+    domain = request.args.get("domain", "")
+    return subprocess.check_output(f"nslookup {domain}", shell=True)
 
 if __name__ == "__main__":
     # FIX 4: debug mode is off unless someone turns it on deliberately.
