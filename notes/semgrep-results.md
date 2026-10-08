@@ -108,3 +108,39 @@ Each code robot runs twice: a report step that shows every finding (always green
 - Hardcoded secrets are reported but not blocked. A dedicated secret scanner (e.g. Gitleaks) that blocks any secret would close this gap.
 - `eval()` in server.js was missed by every tool. SAST has blind spots, so manual code review is still needed.
 - Blocking only on high severity is a deliberate trade-off to avoid alert fatigue.
+
+
+# Step 7a – Fixing the vulnerabilities
+
+Branch `fix-vulnerabilities` → Pull Request #1 → merged into `main`.
+
+- PR checks: **all 3 passed** (Semgrep, Bandit, npm audit).
+- Run #10 on `main` after the merge: **Success**.
+- Before the fixes, run #7 on `main` was **Failure** (all 3 jobs red).
+
+## Fixes
+
+| Bug | Fix | Why it's safe now |
+| --- | --- | --- |
+| 1. Hardcoded secret | Read `SECRET_KEY` from an environment variable | The secret never ends up in the code or on GitHub |
+| 2. SQL injection | Parameterized query with `?` placeholder | The database treats input as data, never as a command |
+| 3. Command injection | Argument list without `shell=True`, plus IP address validation | No shell to trick, and non-IP input is rejected |
+| 4. Flask `debug=True` | Debug only when `FLASK_DEBUG=1` is set | Off by default |
+| 5. `eval()` | `Number()` instead of `eval()` | Input is read as a number, never run as code |
+| Old lodash 4.17.15 | Upgraded to 4.18.1 | `npm audit`: 0 vulnerabilities |
+
+## Before vs after
+
+| | Before (run #7) | After (PR #1 / run #10) |
+| --- | --- | --- |
+| Semgrep gate | ❌ Failed | ✅ Passed |
+| Bandit total issues | 5 (2 High) | 3 (0 High) |
+| Bandit gate | ❌ Failed | ✅ Passed |
+| npm audit | 1 high vulnerability | 0 vulnerabilities |
+| Run result | ❌ Failure | ✅ Success |
+
+## Triage
+
+Bandit still reports 3 Low-severity findings, for example B603 ("subprocess call: check for untrusted input").
+Reviewed and accepted: no `shell=True` is used, and `ipaddress.ip_address()` rejects any input that isn't an IP address.
+Note: Bandit shows "High: 3" under **confidence** (how sure it is), not **severity** (how dangerous). The gate only looks at severity.
